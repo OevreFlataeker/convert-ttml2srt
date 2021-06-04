@@ -4,11 +4,18 @@ using System.IO;
 using System.Linq;
 using System.Xml;
 using System.Xml.Linq;
+using System.Text.RegularExpressions;
 
 namespace ConvertTTML2SRT
 {
     class Program
     {
+
+	public static string StripHTML(string input)
+	{
+	   return Regex.Replace(input, "<.*?>", String.Empty);
+	}
+
         static void Main(string[] args)
         {
             if (args.Length == 0)
@@ -34,7 +41,11 @@ namespace ConvertTTML2SRT
 
             // Strip file extension from cmdline argument
             string newfile = Path.GetFileNameWithoutExtension(args[0]) + ".srt";
-            StreamWriter tw = new StreamWriter(Path.GetDirectoryName(args[0])+Path.DirectorySeparatorChar+newfile);
+	    if (!string.IsNullOrEmpty(Path.GetDirectoryName(args[0])))
+	    {
+	    	newfile = Path.GetDirectoryName(args[0])+Path.DirectorySeparatorChar+newfile;
+	    }
+            StreamWriter tw = new StreamWriter(newfile);
             int cnt = 1;
             foreach (XElement p in doc.Descendants("p"))
             {
@@ -46,7 +57,8 @@ namespace ConvertTTML2SRT
                 end += new string('0', end.Length - end.IndexOf(',') - 2);
                 
                 tw.WriteLine(string.Format("{0} --> {1}", begin, end));
-                tw.WriteLine(String.Join("", p.Nodes()).Trim().Replace("<br />","\n"));                
+		string contents = String.Join("", p.Nodes()).Trim().Replace("<br />","\n");                
+		tw.WriteLine(StripHTML(contents));
                 tw.WriteLine();
                 cnt++;
             }
